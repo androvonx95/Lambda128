@@ -9,3 +9,5 @@ out/
 Thumbs.db
 .cursor-clone/
 benchmarks/results/
+# Landing page (deployed separately via Vercel)
+landing-page/

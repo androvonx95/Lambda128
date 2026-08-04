@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lambda128 — Settings</title>
+  <style>
+    :root {
+      --bg: var(--vscode-editor-background, #1e1e1e);
+      --fg: var(--vscode-editor-foreground, #d4d4d4);
+      --border: var(--vscode-panel-border, #3c3c3c);
+      --accent: var(--vscode-focusBorder, #007acc);
+      --input-bg: var(--vscode-input-background, #3c3c3c);
+      --input-fg: var(--vscode-input-foreground, #cccccc);
+      --button-bg: var(--vscode-button-background, #007acc);
+      --button-fg: var(--vscode-button-foreground, #ffffff);
+      --button-hover: var(--vscode-button-hoverBackground, #1f8ad2);
+      --danger: #e4572e;
+      --success: #0e9f7a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--fg); font-size: 13px;
+      line-height: 1.5; padding: 16px;
+    }
+    h2 { font-size: 15px; font-weight: 600; margin: 24px 0 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    h3 { font-size: 13px; font-weight: 600; margin: 16px 0 8px; }
+    .provider-card {
+      border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-bottom: 12px;
+      background: color-mix(in srgb, var(--bg) 95%, white);
+    }
+    .provider-card label { display: block; font-size: 11px; font-weight: 600; margin: 10px 0 4px; color: var(--fg); opacity: 0.8; }
+    .provider-card input, .provider-card select {
+      width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px;
+      background: var(--input-bg); color: var(--input-fg); font-size: 13px;
+    }
+    .provider-card select { cursor: pointer; }
+    .btn {
+      padding: 6px 14px; border: none; border-radius: 4px; cursor: pointer;
+      font-size: 12px; font-weight: 600; transition: all 0.15s;
+      background: var(--button-bg); color: var(--button-fg);
+    }
+    .btn:hover { background: var(--button-hover); }
+    .btn.flat {
+      background: transparent; color: var(--fg); border: 1px solid var(--border);
+    }
+    .btn.flat:hover { background: var(--input-bg); }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600;
+    }
+    .badge.on { background: color-mix(in srgb, var(--success) 20%, transparent); color: var(--success); }
+    .badge.off { background: color-mix(in srgb, var(--fg) 15%, transparent); color: var(--fg); opacity: 0.6; }
+    .perm-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .perm-row span { font-family: monospace; font-size: 12px; }
+    .perm-row select { padding: 3px 6px; font-size: 12px; border: 1px solid var(--border); border-radius: 3px; background: var(--input-bg); color: var(--input-fg); cursor: pointer; }
+    .embedding-box {
+      background: color-mix(in srgb, var(--accent) 10%, transparent); border: 1px solid var(--accent);
+      border-radius: 6px; padding: 12px; margin: 8px 0; font-size: 12px;
+    }
+    .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 8px 0; }
+    .progress-bar div { height: 100%; background: var(--accent); transition: width 0.3s; border-radius: 3px; }
+    .toast {
+      position: fixed; bottom: 16px; right: 16px; padding: 10px 16px; border-radius: 6px;
+      font-size: 12px; font-weight: 600; z-index: 100; animation: toastIn 0.3s ease;
+      background: var(--success); color: #fff;
+    }
+    .toast.error { background: var(--danger); }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .hidden { display: none !important; }
+    .env-hint { font-size: 11px; color: var(--fg); opacity: 0.6; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <h2>AI Providers</h2>
+  <div id="providers"></div>
+
+  <h2>Tool Permissions</h2>
+  <div id="permissions"></div>
+
+  <h2>Embeddings</h2>
+  <div id="embeddings-section">
+    <label for="embeddingMode" style="font-weight:600;">Embedding Mode</label>
+    <select id="embeddingMode" style="width:100%;margin-top:4px;padding:6px;border:1px solid var(--border);border-radius:4px;background:var(--input-bg);color:var(--input-fg);">
+      <option value="off">Off</option>
+      <option value="local">Local (all-MiniLM-L6-v2, ~80MB download)</option>
+      <option value="cloud">Cloud (OpenAI text-embedding-3-small, requires API key)</option>
+    </select>
+    <div id="embeddingEstimate" class="embedding-box hidden">
+      <div>Files: <strong id="estFiles">0</strong> | Chunks: <strong id="estChunks">0</strong></div>
+      <div>RAM: <strong id="estRAM">0 MB</strong> | Time: ~<strong id="estTime">0s</strong></div>
+    </div>
+    <div id="indexProgress" class="hidden">
+      <div class="progress-bar"><div id="progressFill" style="width:0%"></div></div>
+      <span id="progressLabel">Indexing...</span>
+    </div>
+    <button id="reindexBtn" class="btn flat hidden" style="margin-top:8px;">Reindex Workspace</button>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-top:24px;">
+    <button id="saveBtn" class="btn">Save Settings</button>
+    <button id="resetBtn" class="btn flat">Reset</button>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+    const providers = ['openai', 'anthropic', 'gemini', 'openrouter', 'bedrock'];
+    const models = {
+      openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'o4-mini'],
+      anthropic: ['claude-sonnet-4-20250514', 'claude-opus-4-20250514', 'claude-haiku-3-5-v1:0'],
+      gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
+      openrouter: ['openai/gpt-4o', 'anthropic/claude-sonnet-4-20250514', 'google/gemini-2.5-flash'],
+      bedrock: ['us.anthropic.claude-sonnet-4-20250514-v1:0', 'us.anthropic.claude-opus-4-20250514-v1:0']
+    };
+    const providerNames = { openai:'OpenAI', anthropic:'Anthropic', gemini:'Google Gemini', openrouter:'OpenRouter', bedrock:'AWS Bedrock' };
+
+    let state = { providers:{}, defaultProvider:'anthropic', toolPermissions:{}, embeddingMode:'off' };
+
+    function render() {
+      document.getElementById('providers').innerHTML = providers.map(p => {
+        const s = state.providers[p] || { apiKey:'', model:models[p][0], enabled:false };
+        return `<div class="provider-card">
+          <h4>${providerNames[p]} <span class="badge ${s.enabled?'on':'off'}">${s.enabled?'configured':'not set'}</span></h4>
+          <label>API Key</label>
+          <input type="password" id="key-${p}" value="${s.apiKey||''}" placeholder="${p==='bedrock'?'Uses AWS credentials':'sk-...'}"/>
+          <span class="env-hint">${p==='bedrock'?'Uses AWS env vars or ~/.aws/credentials':'Get from '+p+'.com'}</span>
+          <label>Model</label>
+          <select id="model-${p}">${models[p].map(m=>`<option value="${m}" ${s.model===m?'selected':''}>${m}</option>`).join('')}</select>
+        </div>`;
+      }).join('') + `
+        <label style="font-weight:600;margin-top:12px;display:block;">Default Provider</label>
+        <select id="defaultProvider" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;background:var(--input-bg);color:var(--input-fg);margin-top:4px;">
+          ${providers.map(p=>`<option value="${p}" ${state.defaultProvider===p?'selected':''}>${providerNames[p]}</option>`).join('')}
+        </select>`;
+
+      const perms = ['read_file','search_files','glob','list_directory','git_status','git_diff','write_file','edit_file','create_file','delete_file','rename_file','run_terminal'];
+      document.getElementById('permissions').innerHTML = perms.map(p =>
+        `<div class="perm-row"><span>${p.replace(/_/g,' ')}</span>
+        <select id="perm-${p}">
+          <option value="auto" ${(state.toolPermissions[p]||'ask')==='auto'?'selected':''}>Auto</option>
+          <option value="ask" ${(state.toolPermissions[p]||'ask')==='ask'?'selected':''}>Ask first</option>
+          <option value="deny" ${(state.toolPermissions[p]||'ask')==='deny'?'selected':''}>Deny</option>
+        </select></div>`
+      ).join('');
+    }
+
+    function toast(msg, isError) {
+      const el = document.getElementById('toast');
+      el.textContent = msg; el.className = 'toast' + (isError?' error':'');
+      setTimeout(() => el.classList.add('hidden'), 2500);
+    }
+    function gather() {
+      const p = {}; providers.forEach(id => {
+        const k = document.getElementById('key-'+id);
+        const m = document.getElementById('model-'+id);
+        p[id] = { apiKey:k?.value||'', model:m?.value||models[id][0], enabled:!!(k?.value) };
+      });
+      const t = {};
+      ['read_file','search_files','glob','list_directory','git_status','git_diff','write_file','edit_file','create_file','delete_file','rename_file','run_terminal'].forEach(id => {
+        t[id] = document.getElementById('perm-'+id)?.value||'ask';
+      });
+      return { providers:p, defaultProvider:document.getElementById('defaultProvider')?.value||'anthropic', toolPermissions:t, embeddingMode:document.getElementById('embeddingMode')?.value||'off' };
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      vscode.postMessage({ type:'settings:save', payload:gather() });
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      vscode.postMessage({ type:'settings:load' });
+    });
+    document.getElementById('embeddingMode').addEventListener('change', () => {
+      const mode = document.getElementById('embeddingMode').value;
+      document.getElementById('reindexBtn').classList.toggle('hidden', mode==='off');
+    });
+    document.getElementById('reindexBtn').addEventListener('click', () => {
+      vscode.postMessage({ type:'settings:reindex' });
+    });
+
+    window.addEventListener('message', e => {
+      const msg = e.data;
+      if (msg.type === 'settings:state') { state = msg.payload; render(); document.getElementById('embeddingMode').value = state.embeddingMode||'off'; document.getElementById('reindexBtn').classList.toggle('hidden', state.embeddingMode==='off'); }
+      if (msg.type === 'settings:saved') toast('Settings saved');
+      if (msg.type === 'settings:indexProgress') { document.getElementById('indexProgress').classList.remove('hidden'); document.getElementById('progressFill').style.width = (msg.payload.pct||0)+'%'; document.getElementById('progressLabel').textContent = 'Indexing '+(msg.payload.pct||0)+'%'; }
+      if (msg.type === 'settings:indexComplete') { document.getElementById('progressLabel').textContent = 'Done: '+msg.payload.chunks+' chunks'; setTimeout(() => document.getElementById('indexProgress').classList.add('hidden'), 3000); }
+    });
+
+    vscode.postMessage({ type:'settings:load' });
+    render();
+  </script>
+</body>
+</html>
