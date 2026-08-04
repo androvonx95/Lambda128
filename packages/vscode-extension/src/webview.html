@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chat</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--vscode-sideBar-background); color: var(--vscode-foreground); height: 100vh; display: flex; flex-direction: column; }
+    #messages { flex: 1; overflow-y: auto; padding: 16px; }
+    .message { margin-bottom: 16px; padding: 12px; border-radius: 8px; max-width: 85%; }
+    .message.user { background: var(--vscode-button-background); color: var(--vscode-button-foreground); margin-left: auto; }
+    .message.assistant { background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); }
+    .message pre { background: var(--vscode-textCodeBlock-background); padding: 12px; border-radius: 6px; overflow-x: auto; margin: 8px 0; }
+    .message code { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; }
+    #input-area { display: flex; padding: 12px; border-top: 1px solid var(--vscode-panel-border); gap: 8px; }
+    #input-area textarea { flex: 1; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 6px; padding: 10px; resize: none; font-family: inherit; font-size: 14px; min-height: 40px; max-height: 120px; }
+    #input-area button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; border-radius: 6px; padding: 10px 16px; cursor: pointer; font-size: 14px; }
+    #input-area button:hover { background: var(--vscode-button-hoverBackground); }
+    #input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .tool-call { background: var(--vscode-textBlockQuote-background); border-left: 3px solid var(--vscode-textLink-foreground); padding: 8px 12px; margin: 8px 0; border-radius: 4px; font-size: 13px; }
+    .agent-progress { background: var(--vscode-editorInfo-background); padding: 8px 12px; border-radius: 6px; margin: 8px 0; font-size: 13px; }
+    .error { color: var(--vscode-errorForeground); background: var(--vscode-inputValidation-errorBackground); padding: 8px 12px; border-radius: 6px; margin: 8px 0; }
+    .streaming-cursor::after { content: '\25AE'; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
+</head>
+<body>
+  <div id="messages"></div>
+  <div id="input-area">
+    <textarea id="input" rows="1" placeholder="Ask anything about your code... (Use @agent for agent mode)"></textarea>
+    <button id="send-btn">Send</button>
+  </div>
+  <script>
+    const vscode = acquireVsCodeApi();
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('send-btn');
+    let currentStreamingEl = null;
+    let streamingContent = '';
+
+    function addMessage(role, content) {
+      const div = document.createElement('div');
+      div.className = 'message ' + role;
+      div.innerHTML = formatContent(content);
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return div;
+    }
+
+    function formatContent(text) {
+      var html = text.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(m, lang, code) {
+        return '<pre><code class="language-' + (lang || '') + '">' + code + '</code></pre>';
+      });
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    }
+
+    function sendMessage() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+      addMessage('user', text);
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+      sendBtn.disabled = true;
+      if (text.startsWith('@agent')) {
+        vscode.postMessage({ type: 'agent:start', payload: { objective: text.replace('@agent', '').trim() } });
+      } else {
+        vscode.postMessage({ type: 'chat:send', payload: { message: text } });
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    inputEl.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    inputEl.addEventListener('input', function() {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+    });
+
+    window.addEventListener('message', function(event) {
+      var msg = event.data;
+      switch (msg.type) {
+        case 'chat:streamStart':
+          currentStreamingEl = addMessage('assistant', '');
+          currentStreamingEl.classList.add('streaming-cursor');
+          streamingContent = '';
+          break;
+        case 'chat:streamChunk':
+          if (currentStreamingEl) {
+            streamingContent += msg.payload.contentDelta;
+            currentStreamingEl.innerHTML = formatContent(streamingContent);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+          }
+          break;
+        case 'chat:streamEnd':
+          if (currentStreamingEl) {
+            currentStreamingEl.classList.remove('streaming-cursor');
+            currentStreamingEl = null;
+          }
+          sendBtn.disabled = false;
+          break;
+        case 'chat:error':
+          var errEl = document.createElement('div');
+          errEl.className = 'error';
+          errEl.textContent = 'Error: ' + msg.payload.message;
+          messagesEl.appendChild(errEl);
+          sendBtn.disabled = false;
+          break;
+        case 'tool:approvalRequest':
+          var approved = confirm('Allow AI to run: ' + msg.payload.toolName + '?\n\n' + JSON.stringify(msg.payload.params, null, 2));
+          vscode.postMessage({ type: 'tool:approvalResponse', payload: { approved: approved } });
+          break;
+        case 'agent:progress':
+          var progEl = document.createElement('div');
+          progEl.className = 'agent-progress';
+          progEl.textContent = 'Agent: Step ' + msg.payload.currentStep + '/' + msg.payload.totalSteps + ' - ' + msg.payload.currentAction;
+          messagesEl.appendChild(progEl);
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+          break;
+        case 'agent:complete':
+          addMessage('assistant', '\u2705 Agent task completed!');
+          sendBtn.disabled = false;
+          break;
+        case 'agent:error':
+          var aerrEl = document.createElement('div');
+          aerrEl.className = 'error';
+          aerrEl.textContent = 'Agent error: ' + msg.payload.message;
+          messagesEl.appendChild(aerrEl);
+          sendBtn.disabled = false;
+          break;
+      }
+    });
+  </script>
+</body>
+</html>

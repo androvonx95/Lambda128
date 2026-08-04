@@ -1,0 +1,98 @@
+{
+  "name": "@lambda128/vscode-extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/extension.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "package": "vsce package",
+    "publish:marketplace": "vsce publish",
+    "publish:openvsx": "ovsx publish"
+  },
+  "dependencies": {
+    "@lambda128/shared": "workspace:*",
+    "@lambda128/core": "workspace:*",
+    "@lambda128/providers": "workspace:*",
+    "@lambda128/storage": "workspace:*",
+    "@lambda128/repository": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "activationEvents": [
+    "onView:lambda128.chat",
+    "onView:lambda128.settings",
+    "onView:lambda128.history",
+    "onView:lambda128.repoMap",
+    "onCommand:lambda128.openChat",
+    "onCommand:lambda128.explainCode",
+    "onCommand:lambda128.fixCode",
+    "onCommand:lambda128.refactorCode",
+    "onCommand:lambda128.startAgent",
+    "onCommand:lambda128.inline.explain",
+    "onCommand:lambda128.inline.fix",
+    "onCommand:lambda128.inline.refactor",
+    "onCommand:lambda128.inline.optimize",
+    "onCommand:lambda128.history.loadConversation",
+    "onCommand:lambda128.history.deleteConversation"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "lambda128",
+          "title": "AI Assistant",
+          "icon": "$(hubot)"
+        }
+      ]
+    },
+    "views": {
+      "lambda128": [
+        { "type": "webview", "id": "lambda128.chat", "name": "Chat" },
+        { "type": "webview", "id": "lambda128.settings", "name": "Settings" },
+        { "type": "tree", "id": "lambda128.history", "name": "History" },
+        { "type": "webview", "id": "lambda128.repoMap", "name": "Repo Map" }
+      ]
+    },
+    "commands": [
+      { "command": "lambda128.openChat", "title": "AI: Open Chat" },
+      { "command": "lambda128.explainCode", "title": "AI: Explain This Code" },
+      { "command": "lambda128.fixCode", "title": "AI: Fix This Code" },
+      { "command": "lambda128.refactorCode", "title": "AI: Refactor This Code" },
+      { "command": "lambda128.startAgent", "title": "AI: Start Agent Mode" }
+    ],
+    "menus": {
+      "editor/context": [
+        { "command": "lambda128.inline.explain", "group": "AI" },
+        { "command": "lambda128.inline.fix", "group": "AI" },
+        { "command": "lambda128.inline.refactor", "group": "AI" },
+        { "command": "lambda128.inline.optimize", "group": "AI" }
+      ]
+    },
+    "configuration": {
+      "title": "lambda128 AI",
+      "properties": {
+        "lambda128.openaiApiKey": { "type": "string", "description": "OpenAI API Key" },
+        "lambda128.anthropicApiKey": { "type": "string", "description": "Anthropic API Key" },
+        "lambda128.geminiApiKey": { "type": "string", "description": "Google Gemini API Key" },
+        "lambda128.openrouterApiKey": { "type": "string", "description": "OpenRouter API Key" },
+        "lambda128.defaultProvider": { "type": "string", "default": "anthropic", "description": "Default AI provider" },
+        "lambda128.toolPermissions": { "type": "object", "description": "Tool permission overrides" },
+        "lambda128.embeddingMode": { "type": "string", "default": "off", "enum": ["off", "local", "cloud"], "description": "Repository embedding mode" },
+        "lambda128.embeddingLocalModel": { "type": "string", "default": "all-MiniLM-L6-v2", "description": "Local embedding model" },
+        "lambda128.embeddingCloudModel": { "type": "string", "default": "text-embedding-3-small", "description": "Cloud embedding model" },
+        "lambda128.openaiModel": { "type": "string", "default": "gpt-4o", "description": "OpenAI model" },
+        "lambda128.anthropicModel": { "type": "string", "default": "claude-sonnet-4-20250514", "description": "Anthropic model" },
+        "lambda128.geminiModel": { "type": "string", "default": "gemini-2.5-flash", "description": "Gemini model" },
+        "lambda128.openrouterModel": { "type": "string", "default": "openai/gpt-4o", "description": "OpenRouter model" }
+      }
+    }
+  }
+}
