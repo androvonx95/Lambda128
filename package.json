@@ -1,0 +1,29 @@
+{
+  "name": "lambda128",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cursor-inspired AI coding assistant built on Code-OSS",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r dev",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r clean"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "pnpm": "^11.18.0"
+  },
+  "dependencies": {
+    "@types/diff": "^8.0.0",
+    "@types/dompurify": "^3.2.0",
+    "diff": "^9.0.0",
+    "dompurify": "^3.4.12",
+    "highlight.js": "^11.11.1",
+    "marked": "^18.0.7"
+  }
+}
