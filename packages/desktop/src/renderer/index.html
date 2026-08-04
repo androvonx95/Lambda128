@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://openrouter.ai"
+  />
+  <title>lambda128 — AI Coding IDE</title>
+  <style>
+    /* ------------------------------------------------------------------ */
+    /* Reset & Base                                                        */
+    /* ------------------------------------------------------------------ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-primary: #1e1e2e;
+      --bg-secondary: #181825;
+      --bg-tertiary: #11111b;
+      --bg-surface: #313244;
+      --bg-hover: #45475a;
+      --text-primary: #cdd6f4;
+      --text-secondary: #a6adc8;
+      --text-muted: #6c7086;
+      --accent: #89b4fa;
+      --accent-hover: #74c7ec;
+      --green: #a6e3a1;
+      --red: #f38ba8;
+      --yellow: #f9e2af;
+      --orange: #fab387;
+      --border: #45475a;
+      --sidebar-width: 280px;
+      --panel-height: 250px;
+      --titlebar-height: 38px;
+      --statusbar-height: 24px;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Layout                                                              */
+    /* ------------------------------------------------------------------ */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Title Bar */
+    #titlebar {
+      display: flex;
+      align-items: center;
+      height: var(--titlebar-height);
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+      padding: 0 12px;
+      -webkit-app-region: drag;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    #titlebar .title {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+    }
+
+    #titlebar .window-controls {
+      display: flex;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    #titlebar .window-controls button {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    #titlebar .window-controls button:hover {
+      opacity: 0.8;
+    }
+
+    .btn-minimize { background: var(--yellow); }
+    .btn-maximize { background: var(--green); }
+    .btn-close { background: var(--red); }
+
+    /* Main Content Area */
+    #main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    #sidebar .section {
+      border-bottom: 1px solid var(--border);
+    }
+
+    #sidebar .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #sidebar .section-header:hover {
+      color: var(--text-secondary);
+    }
+
+    #sidebar .file-list {
+      list-style: none;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    #sidebar .file-list li {
+      padding: 4px 12px 4px 24px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #sidebar .file-list li:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    #sidebar .file-list li.active {
+      background: var(--bg-surface);
+      color: var(--accent);
+    }
+
+    #sidebar .file-list li .icon {
+      font-size: 14px;
+      width: 16px;
+      text-align: center;
+    }
+
+    /* Editor Area */
+    #editor-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #tabs {
+      display: flex;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      flex-shrink: 0;
+      height: 35px;
+    }
+
+    #tabs .tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-right: 1px solid var(--border);
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+      min-width: 0;
+    }
+
+    #tabs .tab:hover {
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+    }
+
+    #tabs .tab.active {
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      border-bottom: 2px solid var(--accent);
+    }
+
+    #tabs .tab .close-tab {
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      margin-left: 4px;
+    }
+
+    #tabs .tab:hover .close-tab {
+      opacity: 0.6;
+    }
+
+    #tabs .tab .close-tab:hover {
+      opacity: 1;
+      color: var(--red);
+    }
+
+    #editor {
+      flex: 1;
+      background: var(--bg-primary);
+      overflow: auto;
+      position: relative;
+    }
+
+    #editor textarea {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      border: none;
+      outline: none;
+      resize: none;
+      padding: 16px;
+      tab-size: 2;
+    }
+
+    #editor .welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      gap: 16px;
+    }
+
+    #editor .welcome h1 {
+      font-size: 28px;
+      font-weight: 300;
+      color: var(--text-secondary);
+    }
+
+    #editor .welcome .shortcuts {
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 8px 24px;
+      font-size: 12px;
+    }
+
+    #editor .welcome .shortcuts kbd {
+      background: var(--bg-surface);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      border: 1px solid var(--border);
+    }
+
+    /* AI Panel (bottom) */
+    #ai-panel {
+      height: var(--panel-height);
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    #ai-panel.collapsed {
+      height: 0;
+      border-top: none;
+      overflow: hidden;
+    }
+
+    #ai-panel .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    #ai-panel .panel-header:hover {
+      color: var(--text-secondary);
+    }
+
+    #ai-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #ai-messages .message {
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+      max-width: 85%;
+    }
+
+    #ai-messages .message.user {
+      align-self: flex-end;
+      background: var(--accent);
+      color: var(--bg-tertiary);
+    }
+
+    #ai-messages .message.assistant {
+      align-self: flex-start;
+      background: var(--bg-surface);
+      color: var(--text-primary);
+    }
+
+    #ai-messages .message.system {
+      align-self: center;
+      background: transparent;
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 11px;
+    }
+
+    #ai-input-area {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    #ai-input {
+      flex: 1;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      outline: none;
+      resize: none;
+      min-height: 32px;
+      max-height: 80px;
+    }
+
+    #ai-input:focus {
+      border-color: var(--accent);
+    }
+
+    #ai-input-area button {
+      background: var(--accent);
+      color: var(--bg-tertiary);
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    #ai-input-area button:hover {
+      background: var(--accent-hover);
+    }
+
+    #ai-input-area button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Status Bar */
+    #statusbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: var(--statusbar-height);
+      background: var(--accent);
+      color: var(--bg-tertiary);
+      padding: 0 12px;
+      font-size: 11px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    #statusbar .left, #statusbar .right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-hover);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Title Bar -->
+    <div id="titlebar">
+      <span class="title">lambda128</span>
+      <div class="window-controls">
+        <button class="btn-minimize" onclick="window.lambda128.minimize()" title="Minimize"></button>
+        <button class="btn-maximize" onclick="window.lambda128.maximize()" title="Maximize"></button>
+        <button class="btn-close" onclick="window.lambda128.close()" title="Close"></button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main">
+      <!-- Sidebar -->
+      <div id="sidebar">
+        <div class="section">
+          <div class="section-header" onclick="toggleSection('explorer')">
+            📁 Explorer
+          </div>
+          <ul class="file-list" id="file-list">
+            <li onclick="openFolder()" style="color: var(--accent); cursor: pointer;">
+              <span class="icon">📂</span> Open Folder...
+            </li>
+          </ul>
+        </div>
+        <div class="section">
+          <div class="section-header" onclick="toggleSection('ai-tools')">
+            🤖 AI Tools
+          </div>
+          <ul class="file-list">
+            <li onclick="sendAICommand('explain')">
+              <span class="icon">💡</span> Explain Code
+            </li>
+            <li onclick="sendAICommand('fix')">
+              <span class="icon">🔧</span> Fix Code
+            </li>
+            <li onclick="sendAICommand('refactor')">
+              <span class="icon">♻️</span> Refactor
+            </li>
+            <li onclick="sendAICommand('optimize')">
+              <span class="icon">⚡</span> Optimize
+            </li>
+          </ul>
+        </div>
+        <div class="section">
+          <div class="section-header" onclick="toggleSection('git')">
+            🔀 Git
+          </div>
+          <ul class="file-list" id="git-status">
+            <li style="color: var(--text-muted);">No repository open</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Editor Area -->
+      <div id="editor-area">
+        <div id="tabs">
+          <div class="tab active" id="welcome-tab">
+            Welcome
+          </div>
+        </div>
+        <div id="editor">
+          <div class="welcome" id="welcome-screen">
+            <h1>lambda128</h1>
+            <p>AI-Powered Coding Assistant</p>
+            <div class="shortcuts">
+              <span><kbd>Ctrl+O</kbd></span><span>Open Folder</span>
+              <span><kbd>Ctrl+Shift+L</kbd></span><span>AI Chat</span>
+              <span><kbd>Ctrl+Shift+A</kbd></span><span>Agent Mode</span>
+              <span><kbd>Ctrl+B</kbd></span><span>Toggle AI Panel</span>
+              <span><kbd>Ctrl+Shift+E</kbd></span><span>Toggle Explorer</span>
+              <span><kbd>Ctrl+`</kbd></span><span>Toggle Terminal</span>
+            </div>
+            <button
+              onclick="openFolder()"
+              style="margin-top: 16px; padding: 10px 24px; background: var(--accent); color: var(--bg-tertiary); border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;"
+            >
+              Open Folder
+            </button>
+          </div>
+          <textarea
+            id="code-editor"
+            style="display: none;"
+            placeholder="// Open a file to start editing..."
+            spellcheck="false"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Panel -->
+    <div id="ai-panel">
+      <div class="panel-header" onclick="toggleAIPanel()">
+        💬 AI Chat
+        <span id="ai-panel-toggle">▼</span>
+      </div>
+      <div id="ai-messages">
+        <div class="message system">
+          Welcome to lambda128! Open a folder and start coding with AI assistance.
+        </div>
+      </div>
+      <div id="ai-input-area">
+        <textarea
+          id="ai-input"
+          placeholder="Ask the AI anything... (or type @agent for agent mode)"
+          rows="1"
+          onkeydown="handleAIInputKey(event)"
+        ></textarea>
+        <button onclick="sendAIMessage()" id="send-btn">Send</button>
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusbar">
+      <div class="left">
+        <span id="status-provider">🔌 No provider configured</span>
+      </div>
+      <div class="right">
+        <span id="status-git">⎇ No git repo</span>
+        <span id="status-cursor">Ln 1, Col 1</span>
+        <span id="status-encoding">UTF-8</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -----------------------------------------------------------------------
+    // State
+    // -----------------------------------------------------------------------
+    const state = {
+      workspacePath: null,
+      openFiles: [],
+      activeFile: null,
+      aiPanelCollapsed: false,
+      sidebarCollapsed: false,
+    };
+
+    // -----------------------------------------------------------------------
+    // Window controls (called from titlebar buttons)
+    // -----------------------------------------------------------------------
+    // These are handled via onclick in HTML since the preload API is exposed
+
+    // -----------------------------------------------------------------------
+    // File operations
+    // -----------------------------------------------------------------------
+    async function openFolder() {
+      try {
+        const result = await window.lambda128.openFolder();
+        if (result.success && result.folderPath) {
+          state.workspacePath = result.folderPath;
+          await refreshFileList();
+          updateStatusBar();
+        }
+      } catch (err) {
+        console.error('Failed to open folder:', err);
+      }
+    }
+
+    async function refreshFileList() {
+      if (!state.workspacePath) return;
+      try {
+        const result = await window.lambda128.readDir(state.workspacePath);
+        if (result.success && result.entries) {
+          const fileList = document.getElementById('file-list');
+          // Keep the "Open Folder" item
+          fileList.innerHTML = `
+            <li onclick="openFolder()" style="color: var(--accent); cursor: pointer;">
+              <span class="icon">📂</span> ${state.workspacePath.split('/').pop() || state.workspacePath}
+            </li>
+          `;
+          // Sort: directories first, then files
+          const sorted = result.entries.sort((a, b) => {
+            if (a.isDirectory && !b.isDirectory) return -1;
+            if (!a.isDirectory && b.isDirectory) return 1;
+            return a.name.localeCompare(b.name);
+          });
+          for (const entry of sorted) {
+            if (entry.name.startsWith('.')) continue; // Skip hidden
+            const icon = entry.isDirectory ? '📁' : getFileIcon(entry.name);
+            fileList.innerHTML += `
+              <li onclick="${entry.isDirectory ? `navigateTo('${entry.name}')` : `openFile('${entry.name}')`}">
+                <span class="icon">${icon}</span> ${entry.name}
+              </li>
+            `;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to read directory:', err);
+      }
+    }
+
+    function getFileIcon(filename) {
+      const ext = filename.split('.').pop()?.toLowerCase();
+      const icons = {
+        ts: '🟦', tsx: '⚛️', js: '🟨', jsx: '⚛️', mjs: '🟨',
+        json: '📋', md: '📝', html: '🌐', css: '🎨',
+        py: '🐍', rs: '🦀', go: '🔵', java: '☕',
+        gitignore: '⚙️', yaml: '⚙️', yml: '⚙️', toml: '⚙️',
+      };
+      return icons[ext] || '📄';
+    }
+
+    async function openFile(filename) {
+      const filePath = state.workspacePath + '/' + filename;
+      try {
+        const result = await window.lambda128.readFile(filePath);
+        if (result.success && result.content !== undefined) {
+          // Add to open files
+          if (!state.openFiles.find(f => f.path === filePath)) {
+            state.openFiles.push({ path: filePath, name: filename });
+          }
+          state.activeFile = filePath;
+          renderTabs();
+          showEditor(result.content);
+          updateStatusBar();
+        }
+      } catch (err) {
+        console.error('Failed to open file:', err);
+      }
+    }
+
+    async function navigateTo(dirname) {
+      state.workspacePath = state.workspacePath + '/' + dirname;
+      await refreshFileList();
+    }
+
+    function showEditor(content) {
+      document.getElementById('welcome-screen').style.display = 'none';
+      const editor = document.getElementById('code-editor');
+      editor.style.display = 'block';
+      editor.value = content;
+      editor.focus();
+    }
+
+    function renderTabs() {
+      const tabsEl = document.getElementById('tabs');
+      tabsEl.innerHTML = state.openFiles.map(f => {
+        const isActive = f.path === state.activeFile;
+        return `
+          <div class="tab ${isActive ? 'active' : ''}" onclick="switchTab('${f.path}')">
+            ${f.name}
+            <span class="close-tab" onclick="event.stopPropagation(); closeTab('${f.path}')">×</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function switchTab(filePath) {
+      state.activeFile = filePath;
+      try {
+        const result = await window.lambda128.readFile(filePath);
+        if (result.success && result.content !== undefined) {
+          showEditor(result.content);
+          renderTabs();
+        }
+      } catch (err) {
+        console.error('Failed to switch tab:', err);
+      }
+    }
+
+    function closeTab(filePath) {
+      state.openFiles = state.openFiles.filter(f => f.path !== filePath);
+      if (state.activeFile === filePath) {
+        state.activeFile = state.openFiles.length > 0 ? state.openFiles[state.openFiles.length - 1].path : null;
+        if (state.activeFile) {
+          switchTab(state.activeFile);
+        } else {
+          document.getElementById('welcome-screen').style.display = 'flex';
+          document.getElementById('code-editor').style.display = 'none';
+        }
+      }
+      renderTabs();
+    }
+
+    // -----------------------------------------------------------------------
+    // AI Panel
+    // -----------------------------------------------------------------------
+    function toggleAIPanel() {
+      state.aiPanelCollapsed = !state.aiPanelCollapsed;
+      const panel = document.getElementById('ai-panel');
+      const toggle = document.getElementById('ai-panel-toggle');
+      if (state.aiPanelCollapsed) {
+        panel.classList.add('collapsed');
+        toggle.textContent = '▲';
+      } else {
+        panel.classList.remove('collapsed');
+        toggle.textContent = '▼';
+      }
+    }
+
+    function handleAIInputKey(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendAIMessage();
+      }
+    }
+
+    function sendAIMessage() {
+      const input = document.getElementById('ai-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage('user', text);
+      input.value = '';
+
+      // Simulate AI response (in production, this calls the agent engine)
+      setTimeout(() => {
+        if (text.startsWith('@agent')) {
+          addMessage('assistant', '🤖 Agent mode activated. Analyzing workspace...\n\nI\'ll plan the task, read relevant files, and execute step by step. What would you like me to build?');
+        } else {
+          addMessage('assistant', 'I\'ve analyzed your request. To provide the best assistance, I can:\n\n- Read and edit files in your workspace\n- Search across your codebase\n- Run terminal commands (with your approval)\n- Explain, fix, or refactor code\n\nWhat would you like me to help with?');
+        }
+      }, 500);
+    }
+
+    function sendAICommand(command) {
+      const prompts = {
+        explain: 'Explain what the selected code does in detail.',
+        fix: 'Find and fix any bugs or issues in the selected code.',
+        refactor: 'Refactor the selected code to improve readability and maintainability.',
+        optimize: 'Optimize the selected code for better performance.',
+      };
+      const input = document.getElementById('ai-input');
+      input.value = prompts[command] || '';
+      sendAIMessage();
+    }
+
+    function addMessage(role, content) {
+      const messages = document.getElementById('ai-messages');
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+      div.textContent = content;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    // -----------------------------------------------------------------------
+    // UI Helpers
+    // -----------------------------------------------------------------------
+    function toggleSection(name) {
+      const list = document.getElementById('file-list');
+      if (list) {
+        list.style.display = list.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+
+    function updateStatusBar() {
+      const providerEl = document.getElementById('status-provider');
+      const gitEl = document.getElementById('status-git');
+
+      if (state.workspacePath) {
+        providerEl.textContent = '🔌 Set up API key in Settings';
+      }
+
+      // Check for git repo
+      if (state.workspacePath) {
+        window.lambda128.exec('git rev-parse --abbrev-ref HEAD 2>/dev/null', state.workspacePath)
+          .then(result => {
+            if (result.success && result.stdout.trim()) {
+              gitEl.textContent = '⎇ ' + result.stdout.trim();
+            }
+          })
+          .catch(() => {});
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // IPC Event Listeners
+    // -----------------------------------------------------------------------
+    window.lambda128.on('workspace:open', (folderPath) => {
+      state.workspacePath = folderPath;
+      refreshFileList();
+      updateStatusBar();
+    });
+
+    window.lambda128.on('ai:openChat', () => {
+      if (state.aiPanelCollapsed) toggleAIPanel();
+      document.getElementById('ai-input').focus();
+    });
+
+    window.lambda128.on('ai:startAgent', () => {
+      if (state.aiPanelCollapsed) toggleAIPanel();
+      const input = document.getElementById('ai-input');
+      input.value = '@agent ';
+      input.focus();
+    });
+
+    window.lambda128.on('ai:explainCode', () => sendAICommand('explain'));
+    window.lambda128.on('ai:fixCode', () => sendAICommand('fix'));
+    window.lambda128.on('ai:refactorCode', () => sendAICommand('refactor'));
+
+    window.lambda128.on('panel:toggle', () => toggleAIPanel());
+    window.lambda128.on('explorer:toggle', () => {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.style.display = sidebar.style.display === 'none' ? 'flex' : 'none';
+    });
+
+    window.lambda128.on('editor:save', async () => {
+      if (state.activeFile) {
+        const content = document.getElementById('code-editor').value;
+        await window.lambda128.writeFile(state.activeFile, content);
+        addMessage('system', '✅ File saved: ' + state.activeFile.split('/').pop());
+      }
+    });
+
+    // -----------------------------------------------------------------------
+    // Init
+    // -----------------------------------------------------------------------
+    document.addEventListener('DOMContentLoaded', async () => {
+      const version = await window.lambda128.getVersion();
+      document.querySelector('#titlebar .title').textContent = `lambda128 v${version}`;
+    });
+  </script>
+</body>
+</html>
