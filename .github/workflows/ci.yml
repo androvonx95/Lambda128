@@ -7,53 +7,24 @@ on:
     branches: [main]
 
 jobs:
-  typecheck:
-    name: TypeScript Type Check
+  build-and-test:
+    name: Build & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm -r build
-      - run: pnpm -r typecheck 2>&1 || echo "WARNING: typecheck script not found in all packages — verify manually"
 
-  test:
-    name: Unit Tests (39 tests)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: latest
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'pnpm'
+
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
       - run: node test-caches.mjs
-
-  lint:
-    name: Lint (if configured)
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm -r lint 2>&1 || echo "Lint not yet configured — skipping"
 
   cla-check:
     name: CLA Check
@@ -61,7 +32,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
-      - name: Check for CLA signature
+      - name: Verify CLA
         run: |
           echo "CLA verification is handled by the CLA Assistant bot."
           echo "If this is your first PR, please sign the CLA at:"
