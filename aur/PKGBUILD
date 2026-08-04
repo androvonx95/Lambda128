@@ -1,0 +1,40 @@
+# Maintainer: lambda128 Team <dev@lambda128.local>
+# AUR package for lambda128 AI Coding Assistant
+
+pkgname=lambda128-bin
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="AI-powered coding assistant for VS Code / VS Codium (Cursor-inspired)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/lambda128/lambda128"
+license=('MIT')
+depends=('electron33' 'code' 'nodejs>=18')
+makedepends=('npm' 'git')
+provides=('lambda128')
+conflicts=('lambda128')
+
+source=("lambda128-${pkgver}.tar.gz::https://github.com/lambda128/lambda128/archive/v${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  cd "${srcdir}/lambda128-${pkgver}"
+
+  # Install the VSIX extension to VS Codium extensions directory
+  install -d "${pkgdir}/usr/share/code/extensions/lambda128"
+  cp -r packages/vscode-extension/* "${pkgdir}/usr/share/code/extensions/lambda128/"
+
+  # Also install for VS Codium
+  install -d "${pkgdir}/usr/share/codium/extensions/lambda128"
+  cp -r packages/vscode-extension/* "${pkgdir}/usr/share/codium/extensions/lambda128/"
+
+  # Desktop entry
+  install -Dm644 /dev/stdin "${pkgdir}/usr/share/applications/lambda128.desktop" <<EOF
+[Desktop Entry]
+Name=lambda128
+Comment=AI-powered coding assistant
+Exec=code --install-extension lambda128
+Type=Application
+Categories=Development;IDE;
+Keywords=AI;coding;assistant;cursor;
+EOF
+}
