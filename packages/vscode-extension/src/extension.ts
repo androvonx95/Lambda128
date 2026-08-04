@@ -183,7 +183,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // --- NEW: Repo Map Panel ---
-  const repoMapProvider = new RepoMapPanelProvider();
+  const repoMapProvider = new RepoMapPanelProvider(embeddingEngine);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(RepoMapPanelProvider.viewType, repoMapProvider)
   );

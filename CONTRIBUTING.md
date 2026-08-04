@@ -55,7 +55,7 @@ The CI workflow (`.github/workflows/ci.yml`) already includes a CLA check step t
 ## Development Setup
 
 ```bash
-# Prerequisites: Node.js 22+, pnpm 9+
+# Prerequisites: Node.js 22+, pnpm 11+
 git clone https://github.com/androvonx95/lambda128.git
 cd lambda128
 pnpm install
