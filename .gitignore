@@ -1,0 +1,11 @@
+node_modules/
+dist/
+out/
+*.tsbuildinfo
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+.cursor-clone/
+benchmarks/results/
