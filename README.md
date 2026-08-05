@@ -177,10 +177,10 @@ lambda128 is licensed under the [Business Source License 1.1](./LICENSE).
 - **Free for non-production use** (personal, evaluation, development)
 - **Free for production use** if your organization has less than $1M USD annual revenue **OR** fewer than 25 employees
 - **Converts to Apache 2.0** four years after each release
-- **Commercial licenses available** — contact lambda128@proton.me
+- **Commercial licenses available** — contact androvonx95@tutamail.com
 
 ---
 
 ## Governance
 
-lambda128 is a single-maintainer project with a path toward community governance. See [GOVERNANCE.md](./GOVERNANCE.md) and [MAINTAINERS.md](./MAINTAINERS.md).
+androvonx95 is a single-maintainer project with a path toward community governance. See [GOVERNANCE.md](./GOVERNANCE.md) and [MAINTAINERS.md](./MAINTAINERS.md).
