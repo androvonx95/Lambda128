@@ -28,6 +28,36 @@ jobs:
       - run: node test-caches.mjs
 
   # ---------------------------------------------------------------------------
+  # DCO Check — verify Signed-off-by on PR commits
+  # ---------------------------------------------------------------------------
+  dco-check:
+    name: DCO Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check Signed-off-by
+        run: |
+          echo "Checking commits for Signed-off-by trailer..."
+          FAILED=0
+          for commit in $(git rev-list origin/${{ github.base_ref }}..HEAD); do
+            if ! git log -1 --format='%(trailers:key=Signed-off-by,valueonly)' $commit | grep -q '@'; then
+              echo "❌ Commit $commit is missing Signed-off-by"
+              git log -1 --oneline $commit
+              FAILED=1
+            fi
+          done
+          if [ $FAILED -eq 1 ]; then
+            echo ""
+            echo "All commits must include a Signed-off-by line."
+            echo "See CLA.md for details."
+            exit 1
+          fi
+          echo "✅ All commits have Signed-off-by"
+
+  # ---------------------------------------------------------------------------
   # Desktop App — Cross-Platform Build
   # ---------------------------------------------------------------------------
   desktop-linux:

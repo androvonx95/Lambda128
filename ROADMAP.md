@@ -29,9 +29,12 @@
 | Secret Storage | ✅ Done | OS keychain for API keys |
 | VS Code Extension | ✅ Done | Chat, agent, history, repo-map views |
 | Desktop App Shell | ✅ Done | Electron packaging configured |
+| Desktop CI (Linux) | ✅ Done | AppImage + deb built on every push |
+| Desktop CI (macOS) | ✅ Done | DMG built on every push |
+| Desktop CI (Windows) | ✅ Done | NSIS installer built on every push |
 | Arch Linux (AUR) | ✅ Done | PKGBUILD ready |
 | CLA | ✅ Done | Contributor License Agreement |
-| CI/CD Pipeline | ✅ Done | GitHub Actions: typecheck, test, lint, CLA |
+| CI/CD Pipeline | ✅ Done | GitHub Actions: build, test, DCO, desktop, release |
 
 ---
 
@@ -77,9 +80,9 @@
 - [x] 39 passing tests
 
 ### v0.2.0 — "Installable" (Target: 2-4 weeks)
-- [ ] Packaged Electron desktop app (AppImage, deb, dmg, exe)
-- [ ] Published to VS Code Marketplace
-- [ ] Published to Open VSX Registry
+- [x] Packaged Electron desktop app (AppImage, deb, dmg, exe)
+- [ ] Published to VS Code Marketplace (deferred)
+- [ ] Published to Open VSX Registry (deferred)
 - [ ] Complete installation guide
 - [ ] AUR package submission
 - [ ] First public release announcement
