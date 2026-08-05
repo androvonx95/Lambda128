@@ -83,7 +83,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: lambda128-linux
-          path: packages/desktop/release/*.{AppImage,deb}
+          path: |
+            packages/desktop/release/*.AppImage
+            packages/desktop/release/*.deb
 
   desktop-macos:
     name: Desktop (macOS)
