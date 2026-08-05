@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseManager, ConversationRepository, MessageRepository } from '@lambda128/storage';
-import { ProviderRouter, OpenAIProvider, AnthropicProvider, GeminiProvider, OpenRouterProvider, BedrockProvider } from '@lambda128/providers';
+import { ProviderRouter, OpenAIProvider, AnthropicProvider, GeminiProvider, OpenRouterProvider, BedrockProvider, OllamaProvider } from '@lambda128/providers';
 import { ToolRegistry, ReadFileTool, EditFileTool, WriteFileTool, SearchFilesTool, GlobTool, ListDirectoryTool, GitStatusTool, GitDiffTool, DeleteFileTool, RenameFileTool, RunTerminalTool, PromptOrchestrator, AgentEngine, FileCache, TokenBudgetManager, SafetyRulesEngine, CheckpointManager, CompactionEngine } from '@lambda128/core';
 import type { AgentEngineOptions } from '@lambda128/core';
 import type { ContextSnapshot, FileContext, Message, ToolCall } from '@lambda128/shared';
@@ -56,6 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
   providerRouter.register(new GeminiProvider());
   providerRouter.register(new OpenRouterProvider());
   providerRouter.register(new BedrockProvider(process.env.AWS_REGION || 'us-east-1'));
+  providerRouter.register(new OllamaProvider());
   providerRouter.setDefault('anthropic');
   providerRouter.setFallbackChain(['openai', 'gemini', 'openrouter', 'bedrock']);
 

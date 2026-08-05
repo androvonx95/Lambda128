@@ -57,6 +57,7 @@ export const PROVIDER_IDS = {
   ANTHROPIC: 'anthropic',
   GEMINI: 'gemini',
   OPENROUTER: 'openrouter',
+  OLLAMA: 'ollama',
 } as const;
 
 /** Default system prompt */

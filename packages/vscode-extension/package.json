@@ -91,7 +91,9 @@
         "lambda128.openaiModel": { "type": "string", "default": "gpt-4o", "description": "OpenAI model" },
         "lambda128.anthropicModel": { "type": "string", "default": "claude-sonnet-4-20250514", "description": "Anthropic model" },
         "lambda128.geminiModel": { "type": "string", "default": "gemini-2.5-flash", "description": "Gemini model" },
-        "lambda128.openrouterModel": { "type": "string", "default": "openai/gpt-4o", "description": "OpenRouter model" }
+        "lambda128.openrouterModel": { "type": "string", "default": "openai/gpt-4o", "description": "OpenRouter model" },
+        "lambda128.ollamaModel": { "type": "string", "default": "llama3.2", "description": "Ollama model to use (e.g., llama3.2, codellama:13b, qwen2.5-coder:7b)" },
+        "lambda128.ollamaBaseUrl": { "type": "string", "default": "http://localhost:11434/v1", "description": "Ollama API base URL" }
       }
     }
   }
