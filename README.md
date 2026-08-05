@@ -30,7 +30,8 @@ lambda128 adds an AI pair programmer to your editor. It can:
 | Chat with streaming responses | Desktop app packaging (.AppImage/.dmg/.exe) |
 | Agent mode (plan → execute → observe → replan) | VS Code Marketplace / Open VSX publishing |
 | 11 tools (read, write, edit, search, git, terminal) | Tab autocomplete (FIM) |
-| 5 AI providers (OpenAI, Anthropic, Gemini, OpenRouter, Bedrock) | Local/Ollama models |
+| 6 AI providers (OpenAI, Anthropic, Gemini, OpenRouter, Bedrock, Ollama) | |
+| Local/Ollama models (llama3.2, codellama, qwen2.5-coder, deepseek-coder, codestral) | |
 | Automatic provider failover | Semantic search (embeddings engine built, UI in progress) |
 | Patch/diff review before any file is written | |
 | Permission tiers (auto-approve reads, ask for writes) | |
@@ -76,6 +77,8 @@ Open VS Code Settings (`Ctrl+,`) and configure at least one provider:
 | `lambda128.geminiApiKey` | Google Gemini API key |
 | `lambda128.openrouterApiKey` | OpenRouter API key |
 | `lambda128.bedrockAccessKeyId` | AWS Bedrock access key |
+| `lambda128.ollamaModel` | Ollama model (default: `llama3.2`) |
+| `lambda128.ollamaBaseUrl` | Ollama API URL (default: `http://localhost:11434/v1`) |
 | `lambda128.defaultProvider` | Which provider to use first (default: `anthropic`) |
 
 Keys are stored in your **OS keychain** — never in plaintext.
