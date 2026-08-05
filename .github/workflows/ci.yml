@@ -74,7 +74,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
-      - run: pip3 install setuptools
+      - run: pip3 install --break-system-packages setuptools
       - run: cd packages/desktop && npx electron-builder --mac dmg --publish never
       - uses: actions/upload-artifact@v4
         with:
@@ -100,6 +100,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
+      - name: Install Visual Studio Build Tools (C++ workload)
+        run: choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive" -y
       - uses: microsoft/setup-msbuild@v2
       - run: cd packages/desktop && npx electron-builder --win nsis --publish never
       - uses: actions/upload-artifact@v4
