@@ -3,7 +3,7 @@
 An agentic AI coding assistant that works as a **VS Code extension** and **standalone desktop IDE**.
 Built on Code-OSS. Inspired by Cursor's AI workflow — but open-source.
 
-[![CI](https://github.com/androvonx95/lambda128/actions/workflows/ci.yml/badge.svg)](https://github.com/androvonx95/lambda128/actions/workflows/ci.yml)
+[![CI](https://github.com/androvonx95/Lambda128/actions/workflows/ci.yml/badge.svg)](https://github.com/androvonx95/Lambda128/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-BUSL%201.1-blue.svg)](./LICENSE)
 [![CLA](https://img.shields.io/badge/CLA-required-green.svg)](./CLA.md)
 
@@ -49,7 +49,7 @@ lambda128 is **not yet published** on any marketplace. Desktop binaries are not 
 
 ```bash
 # Prerequisites: Node.js 22+, pnpm 11+
-git clone https://github.com/androvonx95/lambda128.git
+git clone https://github.com/androvonx95/Lambda128.git
 cd lambda128
 pnpm install
 pnpm -r build

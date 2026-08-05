@@ -7,7 +7,7 @@
     "name": "lambda128",
     "email": "lambda128@proton.me"
   },
-  "homepage": "https://github.com/androvonx95/lambda128",
+  "homepage": "https://github.com/androvonx95/Lambda128",
   "main": "./dist/main.js",
   "scripts": {
     "build": "tsc && node -e \"const fs=require('fs');const p=require('path');const d='dist/renderer';fs.mkdirSync(d,{recursive:true});fs.cpSync('src/renderer',d,{recursive:true})\"",

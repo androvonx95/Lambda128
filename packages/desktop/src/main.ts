@@ -238,12 +238,12 @@ function buildMenu(): void {
       submenu: [
         {
           label: 'Documentation',
-          click: () => shell.openExternal('https://github.com/androvonx95/lambda128'),
+          click: () => shell.openExternal('https://github.com/androvonx95/Lambda128'),
         },
         {
           label: 'Report Issue',
           click: () =>
-            shell.openExternal('https://github.com/androvonx95/lambda128/issues/new'),
+            shell.openExternal('https://github.com/androvonx95/Lambda128/issues/new'),
         },
         { type: 'separator' },
         {

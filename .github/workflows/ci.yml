@@ -183,6 +183,6 @@ jobs:
             - Patch/diff review workflow
             - 39 passing tests
 
-            See [ROADMAP.md](https://github.com/androvonx95/lambda128/blob/main/ROADMAP.md) for the full development plan.
+            See [ROADMAP.md](https://github.com/androvonx95/Lambda128/blob/main/ROADMAP.md) for the full development plan.
           draft: false
 

@@ -46,7 +46,7 @@ The CLA Assistant is configured at [cla-assistant.io](https://cla-assistant.io/)
 
 1. Go to https://cla-assistant.io
 2. Sign in with GitHub
-3. Add the repository: `androvonx95/lambda128`
+3. Add the repository: `androvonx95/Lambda128`
 4. Link the CLA gist or use the CLA text from [CLA.md](./CLA.md)
 5. Configure required status checks in GitHub branch protection rules
 
@@ -58,7 +58,7 @@ The CI workflow (`.github/workflows/ci.yml`) already includes a CLA check step t
 
 ```bash
 # Prerequisites: Node.js 22+, pnpm 11+
-git clone https://github.com/androvonx95/lambda128.git
+git clone https://github.com/androvonx95/Lambda128.git
 cd lambda128
 pnpm install
 pnpm -r build        # Typecheck all 7 packages
