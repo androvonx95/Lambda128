@@ -161,6 +161,26 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: release-artifacts/*
-          generate_release_notes: true
+          body: |
+            ## lambda128 v0.2.0 — First Installable Release
+
+            Desktop binaries for all platforms:
+
+            | Platform | File |
+            |----------|------|
+            | Linux | `lambda128-0.2.0.AppImage` |
+            | Linux | `lambda128-0.2.0.deb` |
+            | macOS | `lambda128-0.2.0.dmg` |
+            | Windows | `lambda128-0.2.0.exe` |
+
+            ### What's New
+            - Cross-platform desktop app packaging (Linux, macOS, Windows)
+            - DCO enforcement in CI (all commits must have Signed-off-by)
+            - 6 AI providers (OpenAI, Anthropic, Gemini, OpenRouter, Bedrock, Ollama)
+            - Agent mode with 11 tools
+            - Patch/diff review workflow
+            - 39 passing tests
+
+            See [ROADMAP.md](https://github.com/androvonx95/lambda128/blob/main/ROADMAP.md) for the full development plan.
           draft: false
 
