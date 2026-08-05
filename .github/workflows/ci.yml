@@ -100,8 +100,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
-      - name: Configure MSVC for node-gyp
-        run: npm config set msvs_version 2022
       - run: cd packages/desktop && npx electron-builder --win nsis --publish never
       - uses: actions/upload-artifact@v4
         with:
