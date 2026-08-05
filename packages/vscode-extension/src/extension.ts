@@ -16,6 +16,7 @@ import { RepoMapPanelProvider } from './repo-map-view.js';
 import { DiffViewManager } from './diff-view.js';
 import { SecretStorageManager } from './secret-storage.js';
 import { CompletionsProvider } from './completions.js';
+import { loadRules, watchRules, type RulesContext } from './rules-loader.js';
 import { randomUUID, createHash } from 'node:crypto';
 
 let dbManager: DatabaseManager;
