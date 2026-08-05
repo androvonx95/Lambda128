@@ -1,0 +1,4 @@
+# CODEOWNERS — defines who is required to review changes to specific paths
+# All changes require approval from the project maintainer
+
+* @androvonx95

@@ -1,6 +1,7 @@
 # lambda128 — AI Coding Assistant
 
-An agentic AI coding assistant that works as both a **standalone desktop IDE** and a **VS Code extension**. Built on Code-OSS, inspired by Cursor's AI workflow.
+An agentic AI coding assistant that works as a **VS Code extension** and **standalone desktop IDE**.
+Built on Code-OSS. Inspired by Cursor's AI workflow — but open-source.
 
 [![CI](https://github.com/androvonx95/lambda128/actions/workflows/ci.yml/badge.svg)](https://github.com/androvonx95/lambda128/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-BUSL%201.1-blue.svg)](./LICENSE)
@@ -8,229 +9,151 @@ An agentic AI coding assistant that works as both a **standalone desktop IDE** a
 
 ---
 
-## Why lambda128?
+## What lambda128 Does
 
-| | lambda128 | Cursor | Cline | Windsurf | Continue.dev |
-|---|:---:|:---:|:---:|:---:|:---:|
-| **Price** | Free | $20/mo | Free | $15/mo | Free |
-| **Agent Mode** | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **Provider Failover** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Standalone IDE** | ✅ | ✅ | ❌ | ✅ | ❌ |
-| **VS Code Extension** | ✅ | ❌ | ✅ | ❌ | ✅ |
-| **Token Budget Mgmt** | ✅ | ✅ | ❌ | ✅ | ❌ |
-| **Checkpoints** | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **CLA Protection** | ✅ | ❌ | ❌ | ❌ | ❌ |
+lambda128 adds an AI pair programmer to your editor. It can:
 
-See [full comparison](./COMPARISON.md) for detailed breakdown.
+- **Chat** about your codebase with full workspace awareness
+- **Act as an agent** — plan tasks, read files, search code, run terminal commands, and edit multiple files
+- **Show diffs before writing** — you approve every change
+- **Run with your own API key** — no subscription, no hosted backend
+- **Fail over between providers** — if Anthropic goes down, it switches to OpenAI automatically
+
+---
+
+## Current Status
+
+**v0.1.0 Alpha** — The core engine works. You can chat, run the agent, and it will plan + edit code.
+
+| What Works | What's Coming |
+|-----------|---------------|
+| Chat with streaming responses | Desktop app packaging (.AppImage/.dmg/.exe) |
+| Agent mode (plan → execute → observe → replan) | VS Code Marketplace / Open VSX publishing |
+| 11 tools (read, write, edit, search, git, terminal) | Tab autocomplete (FIM) |
+| 5 AI providers (OpenAI, Anthropic, Gemini, OpenRouter, Bedrock) | Local/Ollama models |
+| Automatic provider failover | Semantic search (embeddings engine built, UI in progress) |
+| Patch/diff review before any file is written | |
+| Permission tiers (auto-approve reads, ask for writes) | |
+| 39 tests passing, 0 TypeScript errors | |
+
+See [ROADMAP.md](./ROADMAP.md) for the full development plan.
 
 ---
 
 ## Installation
 
-### Option 1: Standalone Desktop App (Recommended)
+lambda128 is **not yet published** on any marketplace. Desktop binaries are not yet built.
 
-The desktop app is a self-contained IDE — no VS Code required, no extension conflicts.
-
-#### Linux
+### Build from Source (the only option today)
 
 ```bash
-# AppImage (any distro)
-wget https://github.com/androvonx95/lambda128/releases/latest/download/lambda128.AppImage
-chmod +x lambda128.AppImage
-./lambda128.AppImage
-
-# Debian/Ubuntu
-wget https://github.com/androvonx95/lambda128/releases/latest/download/lambda128.deb
-sudo dpkg -i lambda128.deb
-
-# Arch Linux (AUR)
-yay -S lambda128
-# or
-paru -S lambda128
-```
-
-#### macOS
-
-```bash
-# Download the DMG from releases
-# https://github.com/androvonx95/lambda128/releases/latest
-# Open lambda128.dmg and drag to Applications
-```
-
-Or via Homebrew (coming soon):
-```bash
-brew install --cask lambda128
-```
-
-#### Windows
-
-```bash
-# Download the installer from releases
-# https://github.com/androvonx95/lambda128/releases/latest
-# Run lambda128-Setup.exe
-```
-
-Or via winget (coming soon):
-```bash
-winget install lambda128
-```
-
-### Option 2: VS Code / VS Codium Extension
-
-Install alongside your existing VS Code setup:
-
-```bash
-# From VS Code Marketplace (coming soon)
-code --install-extension lambda128.lambda128
-
-# From Open VSX Registry (coming soon)
-codium --install-extension lambda128.lambda128
-
-# From a .vsix file (manual)
-# Download the latest .vsix from releases
-code --install-extension lambda128-0.1.0.vsix
-```
-
-### Option 3: Build from Source
-
-```bash
-# Prerequisites: Node.js 22+, pnpm 9+
+# Prerequisites: Node.js 22+, pnpm 11+
 git clone https://github.com/androvonx95/lambda128.git
 cd lambda128
 pnpm install
 pnpm -r build
 
-# Run tests (39 tests)
-node test-caches.mjs
+# Run tests
+node test-caches.mjs   # Should print: 39 passed, 0 failed
 
-# Launch as VS Code extension
-# Open in VS Code / VS Codium and press F5
-# This opens an Extension Development Host window
-
-# Build desktop app
-cd packages/desktop
-pnpm build
-npx electron-builder
-# Output in packages/desktop/release/
+# Launch the extension
+# Open the project in VS Code / VS Codium and press F5
+# This opens an Extension Development Host with lambda128 loaded
 ```
 
 ---
 
 ## Configuration
 
-After installation, configure your AI provider:
+lambda128 uses **your API keys** — nothing is hosted.
 
-### Settings (VS Code / Desktop App)
+Open VS Code Settings (`Ctrl+,`) and configure at least one provider:
 
-Open Settings (`Ctrl+,`) and set:
+| Setting | Description |
+|---------|-------------|
+| `lambda128.anthropicApiKey` | Anthropic API key (recommended) |
+| `lambda128.openaiApiKey` | OpenAI API key |
+| `lambda128.geminiApiKey` | Google Gemini API key |
+| `lambda128.openrouterApiKey` | OpenRouter API key |
+| `lambda128.bedrockAccessKeyId` | AWS Bedrock access key |
+| `lambda128.defaultProvider` | Which provider to use first (default: `anthropic`) |
 
-| Setting | Description | Required? |
-|---------|-------------|-----------|
-| `lambda128.anthropicApiKey` | Anthropic API key | Recommended |
-| `lambda128.openaiApiKey` | OpenAI API key | Optional |
-| `lambda128.geminiApiKey` | Google Gemini API key | Optional |
-| `lambda128.openrouterApiKey` | OpenRouter API key | Optional |
-| `lambda128.defaultProvider` | Default: `anthropic` | Optional |
-| `lambda128.anthropicModel` | Default: `claude-sonnet-4-20250514` | Optional |
-| `lambda128.openaiModel` | Default: `gpt-4o` | Optional |
-
-**Provider failover**: If your primary provider fails, lambda128 automatically switches to the next available one.
-
----
-
-## Features
-
-### Chat Mode
-Open the AI panel (`Ctrl+Shift+P` → `AI: Open Chat`) and type messages. The AI has context about:
-- Currently open file
-- Selected code
-- Project structure
-- Git status
-
-### Agent Mode
-Prefix with `@agent` or use `AI: Start Agent Mode`. The agent:
-1. Plans the task into steps
-2. Reads relevant files
-3. Searches the codebase
-4. Generates edits as diffs
-5. Asks for approval before writing
-
-### Inline Commands
-Select code → Right-click:
-- **Explain This Code**
-- **Fix This Code**
-- **Refactor This Code**
-- **Optimize This Code**
-
-### Tools Available to AI
-
-| Tool | Category | Description |
-|------|----------|-------------|
-| `read_file` | Read | Read file contents with line range |
-| `write_file` | Write | Create or overwrite files |
-| `edit_file` | Write | Targeted SEARCH/REPLACE edits |
-| `search_files` | Read | Regex search across project (ripgrep) |
-| `glob` | Read | Find files by pattern |
-| `list_directory` | Read | List directory contents |
-| `git_status` | Read | Working tree status |
-| `git_diff` | Read | Staged/unstaged diffs |
-| `delete_file` | Destroy | Delete with backup |
-| `rename_file` | Write | Rename/move files |
-| `run_terminal` | Shell | Execute shell commands |
-
-### Permission Tiers
-
-| Tier | Read Files | Write Files | Delete Files | Shell Commands |
-|------|:----------:|:-----------:|:------------:|:--------------:|
-| Auto-approve | ✅ | | | |
-| Ask once | | | | ✅ |
-| Always ask | | ✅ | ✅ (double) | |
-| Never allow | | | | |
-
-All configurable in settings.
+Keys are stored in your **OS keychain** — never in plaintext.
 
 ---
 
 ## Architecture
 
+lambda128 is an **8-package monorepo**:
+
 ```
 packages/
-├── shared/           → Shared TypeScript types, constants, validation
-├── core/             → Agent engine, prompt orchestrator, tool registry, caches
-├── providers/        → OpenAI, Anthropic, Gemini, OpenRouter, Bedrock
-├── storage/          → SQLite database, keychain, file cache
-├── repository/       → Workspace scanner, repo-map, embeddings
-├── vscode-extension/ → VS Code extension (chat, settings, history, agent UI)
-└── desktop/          → Electron desktop app shell
+├── shared/           Types, constants, IPC contracts
+├── core/             Agent engine, prompt orchestrator, tool registry, token budget
+├── providers/        OpenAI, Anthropic, Gemini, OpenRouter, Bedrock
+├── storage/          SQLite conversations, OS keychain, file cache
+├── repository/       Workspace scanner, repo-map, embeddings engine
+├── vscode-extension/ VS Code extension (chat webview, settings, history, agent UI)
+├── webview/          React chat UI
+└── desktop/          Electron desktop app shell
 ```
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full 16-section architecture document.
+Full architecture: [ARCHITECTURE.md](./ARCHITECTURE.md) (16-section design document)
 
 ---
 
-## Project Status
+## Features
 
-**Current**: v0.1.0 Alpha — Core agent engine functional, 39 tests passing.
+### Chat
 
-See [ROADMAP.md](./ROADMAP.md) for the full development plan and [COMPARISON.md](./COMPARISON.md) for competitive analysis.
+Ask the AI anything about your code. It has context about open files, selected code, project structure, and git status.
 
-### Quick Status
+### Agent Mode
 
-- ✅ Agent engine with planning loop
-- ✅ 11 tools with permission system
-- ✅ 5 AI providers with automatic failover
-- ✅ VS Code extension
-- ✅ CLA + CI/CD pipeline
-- 🚧 Desktop app packaging (next)
-- 🚧 VS Code Marketplace publishing (next)
-- 📋 Tab autocomplete (planned)
-- 📋 Local/Ollama models (planned)
+Prefix with `@agent` or use the command palette. The agent:
+
+1. Decomposes your task into steps
+2. Reads relevant files
+3. Searches the codebase (ripgrep-powered)
+4. Generates edits as SEARCH/REPLACE patches
+5. Shows you a diff
+6. Applies the change only after you approve
+
+### Tools the AI Can Use
+
+| Tool | Category | Requires Approval |
+|------|----------|:---:|
+| `read_file` | Read file contents | ❌ Auto |
+| `write_file` | Create/overwrite files | ✅ Always |
+| `edit_file` | Targeted SEARCH/REPLACE edits | ✅ Always |
+| `search_files` | Regex search (ripgrep) | ❌ Auto |
+| `glob` | Find files by pattern | ❌ Auto |
+| `list_directory` | List directory contents | ❌ Auto |
+| `git_status` | Working tree status | ❌ Auto |
+| `git_diff` | Staged/unstaged diffs | ❌ Auto |
+| `delete_file` | Delete with backup | ✅ Double confirm |
+| `rename_file` | Rename/move files | ✅ Always |
+| `run_terminal` | Execute shell commands | ✅ Always |
+
+All permissions are configurable in Settings.
+
+---
+
+## Security
+
+- **API keys** stored in OS keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service)
+- **No cloud backend** — all provider calls go directly from your machine
+- **File writes require approval** — the AI cannot modify files without your consent
+- **Terminal commands require approval** — dangerous commands are flagged
+- **Workspace boundary** — the AI cannot read files outside your project
+
+See [SECURITY.md](./SECURITY.md) for the full security policy.
 
 ---
 
 ## Contributing
 
-We welcome contributions! All contributors must sign the [CLA](./CLA.md) before PRs can be merged.
+All contributors must sign the [CLA](./CLA.md) before PRs can be merged. The CLA grants a license to your contribution, and assigns copyright if the project is ever relicensed or transferred.
 
 ```bash
 git clone https://github.com/androvonx95/lambda128.git
@@ -240,18 +163,21 @@ pnpm -r build
 node test-caches.mjs  # Must pass all 39 tests
 ```
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for full guidelines.
+Full guide: [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ---
 
 ## License
 
-lambda128 is licensed under the [Business Source License 1.1 (BUSL 1.1)](./LICENSE). The license automatically converts to Apache 2.0 after 4 years.
+lambda128 is licensed under the [Business Source License 1.1](./LICENSE).
 
-All contributors must sign the [Contributor License Agreement](./CLA.md).
+- **Free for non-production use** (personal, evaluation, development)
+- **Free for production use** if your organization has less than $1M USD annual revenue **OR** fewer than 25 employees
+- **Converts to Apache 2.0** four years after each release
+- **Commercial licenses available** — contact lambda128@proton.me
 
 ---
 
-## Security
+## Governance
 
-API keys are stored in your OS keychain (never in plaintext). The AI never writes to your filesystem without explicit approval. See [ARCHITECTURE.md §10](./ARCHITECTURE.md#10-security-model) for the full security model.
+lambda128 is a single-maintainer project with a path toward community governance. See [GOVERNANCE.md](./GOVERNANCE.md) and [MAINTAINERS.md](./MAINTAINERS.md).

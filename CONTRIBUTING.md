@@ -31,8 +31,10 @@ Signed-off-by: Your Name <your.email@example.com>
 
 ### What the CLA Covers
 
-- You grant the project maintainer a license to use your contribution
-- You retain copyright ownership of your contribution
+- You grant the project owner a perpetual, royalty-free license to use, sublicense, and distribute your contribution
+- If the project is relicensed, sold, or transferred, you agree to assign copyright in your contribution to the project owner (§2.2)
+- You waive moral rights (attribution and integrity) to the fullest extent permitted by law (§4)
+- You grant a patent license covering your contribution (§3)
 - You confirm your contribution is your original work
 - You confirm you have the right to contribute it
 
@@ -106,8 +108,7 @@ npx electron-builder
 ### Type Checking
 
 ```bash
-pnpm -r build        # Builds all packages
-pnpm -r typecheck    # Type-only check (no emit)
+pnpm -r build        # Build + typecheck all 7 packages (0 errors required)
 ```
 
 ---

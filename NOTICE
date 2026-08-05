@@ -1,0 +1,40 @@
+lambda128
+Copyright 2026 Androvon X
+
+This product includes software developed by the lambda128 Project
+(https://github.com/androvonx95/lambda128).
+
+This product is licensed under the Business Source License 1.1.
+See the LICENSE file for the full license text.
+
+Third-Party Notices
+====================
+
+This product includes software from the following third parties:
+
+- VS Code / Code-OSS (MIT License)
+  Copyright (c) Microsoft Corporation
+
+- TypeScript (Apache License 2.0)
+  Copyright (c) Microsoft Corporation
+
+- Electron (MIT License)
+  Copyright (c) Electron contributors
+
+- better-sqlite3 (MIT License)
+  Copyright (c) Joshua Wise
+
+- marked (MIT License)
+  Copyright (c) Christopher Jeffrey
+
+- highlight.js (BSD 3-Clause License)
+  Copyright (c) Ivan Sagalaev
+
+- diff (BSD 3-Clause License)
+  Copyright (c) Kevin Decker
+
+- DOM Purify (Apache License 2.0 or MPL 2.0)
+  Copyright (c) Cure53 and contributors
+
+Full license texts for third-party dependencies are available in the
+node_modules directory of each package, or upon request.
