@@ -35,7 +35,7 @@
       "dist/**/*",
       "node_modules/**/*"
     ],
-    "nodeGypRebuild": false,
+    "npmRebuild": false,
     "linux": {
       "target": [
         "AppImage",
