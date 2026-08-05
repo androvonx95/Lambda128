@@ -41,20 +41,20 @@
         "deb"
       ],
       "category": "Development",
-      "artifactName": "${name}-${version}.${ext}"
+      "artifactName": "${productName}-${version}.${ext}"
     },
     "mac": {
       "target": [
         "dmg"
       ],
       "category": "public.app-category.developer-tools",
-      "artifactName": "${name}-${version}.${ext}"
+      "artifactName": "${productName}-${version}.${ext}"
     },
     "win": {
       "target": [
         "nsis"
       ],
-      "artifactName": "${name}-${version}.${ext}"
+      "artifactName": "${productName}-${version}.${ext}"
     }
   }
 }
