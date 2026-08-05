@@ -4,25 +4,48 @@
   "private": true,
   "main": "./dist/main.js",
   "scripts": {
-    "build": "tsc",
-    "package": "electron-builder"
+    "build": "tsc && node -e \"const fs=require('fs');const p=require('path');const d='dist/renderer';fs.mkdirSync(d,{recursive:true});fs.cpSync('src/renderer',d,{recursive:true})\"",
+    "package": "electron-builder --linux AppImage deb --win nsis --mac dmg",
+    "package:linux": "electron-builder --linux AppImage deb",
+    "package:win": "electron-builder --win nsis",
+    "package:mac": "electron-builder --mac dmg"
   },
   "dependencies": {
     "@lambda128/vscode-extension": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "electron": "^33.0.0",
+    "electron": "^33.4.11",
     "electron-builder": "^25.0.0",
     "typescript": "^5.5.0"
   },
   "build": {
     "appId": "com.lambda128.app",
     "productName": "lambda128",
-    "directories": { "output": "release" },
-    "files": ["dist/**/*", "node_modules/**/*"],
-    "linux": { "target": ["AppImage", "deb"], "category": "Development" },
-    "mac": { "target": ["dmg"], "category": "public.app-category.developer-tools" },
-    "win": { "target": ["nsis"] }
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
   }
 }
