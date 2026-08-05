@@ -15,6 +15,7 @@ import { ConversationHistoryProvider, registerHistoryCommands } from './history-
 import { RepoMapPanelProvider } from './repo-map-view.js';
 import { DiffViewManager } from './diff-view.js';
 import { SecretStorageManager } from './secret-storage.js';
+import { CompletionsProvider } from './completions.js';
 import { randomUUID, createHash } from 'node:crypto';
 
 let dbManager: DatabaseManager;
@@ -192,6 +193,15 @@ export function activate(context: vscode.ExtensionContext) {
   if (vscode.workspace.workspaceFolders?.length) {
     repoMapProvider.refresh();
   }
+
+  // --- NEW: Tab Autocomplete (FIM) ---
+  const completionsProvider = new CompletionsProvider(providerRouter);
+  context.subscriptions.push(
+    vscode.languages.registerInlineCompletionItemProvider(
+      { pattern: '**/*' },
+      completionsProvider,
+    ),
+  );
 
   // --- NEW: Diff View Manager ---
   const diffManager = new DiffViewManager(storageDir);

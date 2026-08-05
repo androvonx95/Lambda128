@@ -63,7 +63,7 @@ importers:
         specifier: ^22.0.0
         version: 22.20.1
       electron:
-        specifier: ^33.0.0
+        specifier: ^33.4.11
         version: 33.4.11(supports-color@7.2.0)
       electron-builder:
         specifier: ^25.0.0
@@ -146,7 +146,7 @@ importers:
         version: link:../storage
     devDependencies:
       '@types/vscode':
-        specifier: ^1.90.0
+        specifier: ^1.125.0
         version: 1.125.0
       typescript:
         specifier: ^5.5.0
