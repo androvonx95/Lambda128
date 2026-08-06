@@ -65,7 +65,7 @@ jobs:
           echo "✅ All commits have Signed-off-by"
 
   # ---------------------------------------------------------------------------
-  # Desktop App — Cross-Platform Build
+  # Desktop App — Cross-Platform Build (Linux, Windows, MacOS)
   # ---------------------------------------------------------------------------
   desktop-linux:
     name: Desktop (Linux)
