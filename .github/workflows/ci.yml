@@ -65,7 +65,7 @@ jobs:
           echo "✅ All commits have Signed-off-by"
 
   # ---------------------------------------------------------------------------
-  # Desktop App — Cross-Platform Build (Linux, Windows, MacOS)
+  # Desktop App — Cross-Platform Build (Linux, macOS, Windows)
   # ---------------------------------------------------------------------------
   desktop-linux:
     name: Desktop (Linux)
@@ -93,6 +93,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
+
+      - name: Verify desktop main.js is CommonJS (not ESM)
+        run: |
+          if grep -q '^import ' packages/desktop/dist/main.js; then
+            echo "❌ ERROR: desktop main.js contains ESM import statements"
+            echo "   Electron main process requires CommonJS (require/module.exports)"
+            echo "   Check packages/desktop/tsconfig.json — must have \"module\": \"CommonJS\""
+            exit 1
+          fi
+          if ! grep -q 'require(' packages/desktop/dist/main.js; then
+            echo "⚠️  WARNING: desktop main.js has no require() calls — may not be CommonJS"
+          fi
+          echo "✅ desktop main.js is valid CommonJS"
+
       - run: cd packages/desktop && npx electron-builder --linux AppImage deb --publish never
       - uses: actions/upload-artifact@v4
         with:
@@ -127,6 +141,17 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
+
+      - name: Verify desktop main.js is CommonJS (not ESM)
+        run: |
+          if grep -q '^import ' packages/desktop/dist/main.js; then
+            echo "❌ ERROR: desktop main.js contains ESM import statements"
+            echo "   Electron main process requires CommonJS (require/module.exports)"
+            echo "   Check packages/desktop/tsconfig.json — must have \"module\": \"CommonJS\""
+            exit 1
+          fi
+          echo "✅ desktop main.js is valid CommonJS"
+
       - run: pip3 install --break-system-packages setuptools
       - run: cd packages/desktop && npx electron-builder --mac dmg --publish never
       - uses: actions/upload-artifact@v4
@@ -160,6 +185,18 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
+
+      - name: Verify desktop main.js is CommonJS (not ESM)
+        shell: bash
+        run: |
+          if grep -q '^import ' packages/desktop/dist/main.js; then
+            echo "❌ ERROR: desktop main.js contains ESM import statements"
+            echo "   Electron main process requires CommonJS (require/module.exports)"
+            echo "   Check packages/desktop/tsconfig.json — must have \"module\": \"CommonJS\""
+            exit 1
+          fi
+          echo "✅ desktop main.js is valid CommonJS"
+
       - run: cd packages/desktop && npx electron-builder --win nsis --publish never
         env:
           npm_config_msvs_version: "2022"
@@ -213,4 +250,3 @@ jobs:
 
             See [ROADMAP.md](https://github.com/androvonx95/Lambda128/blob/main/ROADMAP.md) for the full development plan.
           draft: false
-
