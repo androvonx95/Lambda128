@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./src/extension.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/webview.html dist/webview.html && cp src/settings.html dist/settings.html",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist *.tsbuildinfo",
     "package": "vsce package",

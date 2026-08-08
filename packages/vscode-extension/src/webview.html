@@ -5,66 +5,295 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Chat</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--vscode-sideBar-background); color: var(--vscode-foreground); height: 100vh; display: flex; flex-direction: column; }
-    #messages { flex: 1; overflow-y: auto; padding: 16px; }
-    .message { margin-bottom: 16px; padding: 12px; border-radius: 8px; max-width: 85%; }
-    .message.user { background: var(--vscode-button-background); color: var(--vscode-button-foreground); margin-left: auto; }
-    .message.assistant { background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); }
-    .message pre { background: var(--vscode-textCodeBlock-background); padding: 12px; border-radius: 6px; overflow-x: auto; margin: 8px 0; }
-    .message code { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; }
-    #input-area { display: flex; padding: 12px; border-top: 1px solid var(--vscode-panel-border); gap: 8px; }
-    #input-area textarea { flex: 1; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 6px; padding: 10px; resize: none; font-family: inherit; font-size: 14px; min-height: 40px; max-height: 120px; }
-    #input-area button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; border-radius: 6px; padding: 10px 16px; cursor: pointer; font-size: 14px; }
-    #input-area button:hover { background: var(--vscode-button-hoverBackground); }
-    #input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .tool-call { background: var(--vscode-textBlockQuote-background); border-left: 3px solid var(--vscode-textLink-foreground); padding: 8px 12px; margin: 8px 0; border-radius: 4px; font-size: 13px; }
-    .agent-progress { background: var(--vscode-editorInfo-background); padding: 8px 12px; border-radius: 6px; margin: 8px 0; font-size: 13px; }
-    .error { color: var(--vscode-errorForeground); background: var(--vscode-inputValidation-errorBackground); padding: 8px 12px; border-radius: 6px; margin: 8px 0; }
-    .streaming-cursor::after { content: '\25AE'; animation: blink 1s infinite; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: var(--vscode-sideBar-background);
+      --fg: var(--vscode-sideBar-foreground);
+      --border: var(--vscode-sideBar-border, var(--vscode-panel-border));
+      --input-bg: var(--vscode-input-background);
+      --input-fg: var(--vscode-input-foreground);
+      --input-border: var(--vscode-input-border);
+      --btn-bg: var(--vscode-button-background);
+      --btn-fg: var(--vscode-button-foreground);
+      --btn-hover: var(--vscode-button-hoverBackground);
+      --msg-user-bg: var(--vscode-button-secondaryBackground, #333);
+      --msg-user-fg: var(--vscode-button-secondaryForeground, #fff);
+      --msg-ai-bg: var(--vscode-editor-background);
+      --code-bg: var(--vscode-textCodeBlock-background, #1e1e1e);
+      --err-fg: var(--vscode-errorForeground);
+      --err-bg: var(--vscode-inputValidation-errorBackground);
+      --accent: var(--vscode-textLink-foreground, #4fc1ff);
+      --muted: var(--vscode-descriptionForeground);
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--fg);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: text;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* ---- Header ---- */
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      gap: 6px;
+      min-height: 36px;
+    }
+    .sidebar-header .title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sidebar-header .actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .sidebar-header .actions button {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 4px;
+      font-size: 14px;
+      line-height: 1;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-header .actions button:hover {
+      background: var(--vscode-toolbar-hoverBackground, rgba(255,255,255,0.08));
+      color: var(--fg);
+    }
+    /* ---- Messages ---- */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      scroll-behavior: smooth;
+    }
+    #messages::-webkit-scrollbar { width: 6px; }
+    #messages::-webkit-scrollbar-thumb { background: var(--vscode-scrollbarSlider-background); border-radius: 3px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    .msg {
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-word;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .msg.user {
+      background: var(--msg-user-bg);
+      color: var(--msg-user-fg);
+      align-self: flex-end;
+      max-width: 92%;
+      border-bottom-right-radius: 2px;
+    }
+    .msg.assistant {
+      background: var(--msg-ai-bg);
+      border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+      align-self: flex-start;
+      max-width: 95%;
+      border-bottom-left-radius: 2px;
+    }
+    .msg.streaming::after { content: '▎'; animation: blink 1s infinite; color: var(--accent); }
     @keyframes blink { 50% { opacity: 0; } }
+    .msg pre {
+      background: var(--code-bg);
+      padding: 8px 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin: 6px 0;
+      font-size: 12px;
+      border: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+    }
+    .msg code {
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .msg p + p { margin-top: 4px; }
+    .msg ul, .msg ol { margin: 4px 0; padding-left: 18px; }
+    .msg li + li { margin-top: 2px; }
+    /* Event cards */
+    .event {
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin: 2px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .event.tool { background: color-mix(in srgb, var(--accent) 12%, transparent); border-left: 3px solid var(--accent); }
+    .event.agent { background: color-mix(in srgb, #6f6 14%, transparent); border-left: 3px solid #6f6; }
+    .event.error { background: var(--err-bg); color: var(--err-fg); border-left: 3px solid var(--err-fg); }
+    .event .icon { flex-shrink: 0; font-size: 13px; }
+    /* ---- Input ---- */
+    #input-area {
+      display: flex;
+      gap: 6px;
+      padding: 8px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      align-items: flex-end;
+    }
+    #input {
+      flex: 1;
+      background: var(--input-bg);
+      color: var(--input-fg);
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      resize: none;
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.4;
+      min-height: 34px;
+      max-height: 110px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #input:focus { border-color: var(--accent); }
+    #input::placeholder { color: var(--muted); }
+    #send-btn {
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+      border: none;
+      border-radius: 6px;
+      padding: 7px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      flex-shrink: 0;
+      white-space: nowrap;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    #send-btn:hover { background: var(--btn-hover); }
+    #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .empty-state .icon { font-size: 32px; opacity: 0.5; }
+    .empty-state .hint {
+      font-size: 11px;
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
-  <div id="messages"></div>
+  <div class="sidebar-header">
+    <span class="title">AI Chat</span>
+    <div class="actions">
+      <button id="new-chat-btn" title="New Chat">+</button>
+      <button id="collapse-btn" title="Hide Sidebar">◀</button>
+    </div>
+  </div>
+  <div id="messages">
+    <div class="empty-state" id="empty-state">
+      <span class="icon">🤖</span>
+      <span>Ask anything about your code</span>
+      <span class="hint">Use <strong>@agent</strong> for multi-step tasks</span>
+    </div>
+  </div>
   <div id="input-area">
-    <textarea id="input" rows="1" placeholder="Ask anything about your code... (Use @agent for agent mode)"></textarea>
+    <textarea id="input" rows="1" placeholder="Ask anything... (@agent for agent mode)"></textarea>
     <button id="send-btn">Send</button>
   </div>
   <script>
     const vscode = acquireVsCodeApi();
     const messagesEl = document.getElementById('messages');
+    const emptyStateEl = document.getElementById('empty-state');
     const inputEl = document.getElementById('input');
     const sendBtn = document.getElementById('send-btn');
     let currentStreamingEl = null;
     let streamingContent = '';
+    let hasMessages = false;
+
+    function hideEmpty() {
+      if (emptyStateEl) emptyStateEl.style.display = 'none';
+      hasMessages = true;
+    }
+    function showEmpty() {
+      if (emptyStateEl) emptyStateEl.style.display = '';
+      hasMessages = false;
+    }
+
+    function addEvent(type, icon, text) {
+      hideEmpty();
+      const div = document.createElement('div');
+      div.className = 'event ' + type;
+      div.innerHTML = '<span class="icon">' + icon + '</span><span>' + text + '</span>';
+      messagesEl.appendChild(div);
+      scrollDown();
+    }
 
     function addMessage(role, content) {
+      hideEmpty();
       const div = document.createElement('div');
-      div.className = 'message ' + role;
+      div.className = 'msg ' + role;
       div.innerHTML = formatContent(content);
       messagesEl.appendChild(div);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+      scrollDown();
       return div;
     }
 
     function formatContent(text) {
       var html = text.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
-      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(m, lang, code) {
-        return '<pre><code class="language-' + (lang || '') + '">' + code + '</code></pre>';
+      html = html.replace(/```(\w*)\n([\\s\\S]*?)```/g, function(m, lang, code) {
+        return '<pre><code class="lang-' + (lang || '') + '">' + code.trim() + '</code></pre>';
       });
       html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-      html = html.replace(/\n/g, '<br>');
+      html = html.replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
+      html = html.replace(/\\n/g, '<br>');
       return html;
+    }
+
+    function scrollDown() {
+      requestAnimationFrame(() => {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      });
     }
 
     function sendMessage() {
       const text = inputEl.value.trim();
       if (!text) return;
+      hideEmpty();
       addMessage('user', text);
       inputEl.value = '';
-      inputEl.style.height = 'auto';
+      inputEl.style.height = '34px';
       sendBtn.disabled = true;
       if (text.startsWith('@agent')) {
         vscode.postMessage({ type: 'agent:start', payload: { objective: text.replace('@agent', '').trim() } });
@@ -78,59 +307,83 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
     inputEl.addEventListener('input', function() {
-      inputEl.style.height = 'auto';
-      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+      inputEl.style.height = '34px';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 110) + 'px';
+    });
+
+    document.getElementById('new-chat-btn').addEventListener('click', function() {
+      vscode.postMessage({ type: 'chat:newConversation', payload: {} });
+    });
+    document.getElementById('collapse-btn').addEventListener('click', function() {
+      vscode.postMessage({ type: 'chat:toggleSidebar', payload: {} });
     });
 
     window.addEventListener('message', function(event) {
       var msg = event.data;
       switch (msg.type) {
         case 'chat:streamStart':
+          hideEmpty();
           currentStreamingEl = addMessage('assistant', '');
-          currentStreamingEl.classList.add('streaming-cursor');
+          currentStreamingEl.classList.add('streaming');
           streamingContent = '';
           break;
         case 'chat:streamChunk':
           if (currentStreamingEl) {
             streamingContent += msg.payload.contentDelta;
             currentStreamingEl.innerHTML = formatContent(streamingContent);
-            messagesEl.scrollTop = messagesEl.scrollHeight;
+            scrollDown();
           }
           break;
         case 'chat:streamEnd':
           if (currentStreamingEl) {
-            currentStreamingEl.classList.remove('streaming-cursor');
+            currentStreamingEl.classList.remove('streaming');
             currentStreamingEl = null;
           }
           sendBtn.disabled = false;
           break;
+        case 'chat:toolExecuting':
+          addEvent('tool', '🔧', 'Running ' + msg.payload.count + ' tool(s)...');
+          break;
+        case 'chat:toolResult':
+          addEvent('tool', msg.payload.status === 'success' ? '✅' : '⚠️',
+            msg.payload.toolName + ': ' + (msg.payload.summary || 'done'));
+          break;
         case 'chat:error':
-          var errEl = document.createElement('div');
-          errEl.className = 'error';
-          errEl.textContent = 'Error: ' + msg.payload.message;
-          messagesEl.appendChild(errEl);
+          addEvent('error', '❌', 'Error: ' + msg.payload.message);
+          sendBtn.disabled = false;
+          break;
+        case 'chat:historyLoaded':
+          if (msg.payload.messages && msg.payload.messages.length) {
+            hideEmpty();
+            msg.payload.messages.forEach(function(m) {
+              if (m.role === 'user') addMessage('user', m.content);
+              else if (m.role === 'assistant') addMessage('assistant', m.content);
+              else if (m.role === 'tool') addEvent('tool', '🔧', m.content);
+            });
+          }
+          break;
+        case 'chat:newConversationReady':
+          messagesEl.innerHTML = '';
+          if (emptyStateEl) {
+            emptyStateEl.style.display = '';
+            messagesEl.appendChild(emptyStateEl);
+          }
+          hasMessages = false;
           sendBtn.disabled = false;
           break;
         case 'tool:approvalRequest':
           var approved = confirm('Allow AI to run: ' + msg.payload.toolName + '?\n\n' + JSON.stringify(msg.payload.params, null, 2));
-          vscode.postMessage({ type: 'tool:approvalResponse', payload: { approved: approved } });
+          vscode.postMessage({ type: 'tool:approvalResponse', payload: { toolId: msg.payload.approvalId, approved: approved } });
           break;
         case 'agent:progress':
-          var progEl = document.createElement('div');
-          progEl.className = 'agent-progress';
-          progEl.textContent = 'Agent: Step ' + msg.payload.currentStep + '/' + msg.payload.totalSteps + ' - ' + msg.payload.currentAction;
-          messagesEl.appendChild(progEl);
-          messagesEl.scrollTop = messagesEl.scrollHeight;
+          addEvent('agent', '🧠', 'Step ' + msg.payload.currentStep + '/' + msg.payload.totalSteps + ' — ' + (msg.payload.currentAction || 'planning'));
           break;
         case 'agent:complete':
-          addMessage('assistant', '\u2705 Agent task completed!');
+          addEvent('agent', '✅', 'Agent task completed!');
           sendBtn.disabled = false;
           break;
         case 'agent:error':
-          var aerrEl = document.createElement('div');
-          aerrEl.className = 'error';
-          aerrEl.textContent = 'Agent error: ' + msg.payload.message;
-          messagesEl.appendChild(aerrEl);
+          addEvent('error', '❌', 'Agent error: ' + msg.payload.message);
           sendBtn.disabled = false;
           break;
       }

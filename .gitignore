@@ -11,3 +11,4 @@ Thumbs.db
 benchmarks/results/
 # Landing page (deployed separately via Vercel)
 landing-page/
+release/

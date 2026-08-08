@@ -30,7 +30,7 @@ let tokenBudget: TokenBudgetManager;
 let workspaceScanner: WorkspaceScanner;
 let workspaceIndexCache: WorkspaceIndexCache;
 let agentEngine: AgentEngine | null = null;
-let chatPanel: vscode.WebviewPanel | undefined;
+let chatView: vscode.WebviewView | undefined;
 let currentConversationId: string | null = null;
 let conversationHistory: Message[] = [];
 let contextCache: { hash: string; snapshot: ContextSnapshot } | null = null;
@@ -118,6 +118,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('lambda128.chat', {
       resolveWebviewView(webviewView) {
+        chatView = webviewView;
         setupWebview(webviewView.webview, context);
       },
     })
@@ -171,9 +172,12 @@ export function activate(context: vscode.ExtensionContext) {
         toolCallId: m.toolCallId, createdAt: m.createdAt,
       }));
       openChatPanel(context);
-      if (chatPanel) {
-        chatPanel.webview.postMessage({ type: 'chat:historyLoaded', payload: { messages: conversationHistory } });
-      }
+      // History loaded messages will be sent once the webview view resolves
+      setTimeout(() => {
+        if (chatView?.webview) {
+          chatView.webview.postMessage({ type: 'chat:historyLoaded', payload: { messages: conversationHistory } });
+        }
+      }, 300);
     },
     (id: string) => {
       convRepo.delete(id);
@@ -226,23 +230,8 @@ async function loadApiKeys() {
 }
 
 function openChatPanel(context: vscode.ExtensionContext) {
-  if (chatPanel) {
-    chatPanel.reveal();
-    return;
-  }
-
-  chatPanel = vscode.window.createWebviewPanel(
-    'lambda128.chatPanel',
-    'AI Chat',
-    vscode.ViewColumn.Two,
-    { enableScripts: true, retainContextWhenHidden: true }
-  );
-
-  setupWebview(chatPanel.webview, context);
-
-  chatPanel.onDidDispose(() => {
-    chatPanel = undefined;
-  });
+  // Focus the sidebar chat view (already initialized by WebviewViewProvider)
+  vscode.commands.executeCommand('workbench.view.extension.lambda128');
 }
 
 function setupWebview(webview: vscode.Webview, context: vscode.ExtensionContext) {
@@ -272,6 +261,14 @@ function setupWebview(webview: vscode.Webview, context: vscode.ExtensionContext)
         break;
       case 'agent:stop':
         agentEngine?.stop();
+        break;
+      case 'chat:newConversation':
+        currentConversationId = null;
+        conversationHistory = [];
+        webview.postMessage({ type: 'chat:newConversationReady', payload: {} });
+        break;
+      case 'chat:toggleSidebar':
+        vscode.commands.executeCommand('workbench.action.toggleSidebarVisibility');
         break;
     }
   });
@@ -536,21 +533,15 @@ async function handleInlineCommand(action: string) {
     refactor: `Refactor this code from ${filePath} to improve readability and maintainability:\n\n\`\`\`\n${selectedText}\n\`\`\``,
   };
 
-  if (!chatPanel) {
-    chatPanel = vscode.window.createWebviewPanel(
-      'lambda128.chatPanel',
-      'AI Chat',
-      vscode.ViewColumn.Two,
-      { enableScripts: true, retainContextWhenHidden: true }
-    );
-    setupWebview(chatPanel.webview, { subscriptions: [] } as any);
-    chatPanel.onDidDispose(() => { chatPanel = undefined; });
+  // Focus sidebar and show inline prompt
+  vscode.commands.executeCommand('workbench.view.extension.lambda128');
+  if (chatView?.webview) {
+    // Directly send via chat:send to trigger the AI response
+    chatView.webview.postMessage({
+      type: 'chat:send',
+      payload: { message: prompts[action] },
+    });
   }
-
-  chatPanel.webview.postMessage({
-    type: 'chat:send',
-    payload: { message: prompts[action] },
-  });
 }
 
 async function startAgentMode() {
@@ -562,8 +553,8 @@ async function startAgentMode() {
   if (!objective) return;
 
   openChatPanel({ subscriptions: [] } as any);
-  if (chatPanel) {
-    await startAgentWithPrompt(objective, chatPanel.webview);
+  if (chatView?.webview) {
+    await startAgentWithPrompt(objective, chatView.webview);
   }
 }
 
